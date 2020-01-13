@@ -1,0 +1,14 @@
+global:
+  resolve_timeout: '60s'
+  
+route:
+  receiver: "dm-alert"
+  group_by: ['alertname']
+  group_wait: 30s
+  group_interval: 5s
+  
+ 
+receivers:
+- name: "dm-alert"
+  webhook_configs:
+  - url: 'http://DM-IP:8082/alert'

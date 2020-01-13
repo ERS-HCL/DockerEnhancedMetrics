@@ -1,0 +1,128 @@
+groups:
+- name: Conteiner CPU
+  rules:
+  - alert: Container_CPU_Utilization_Alert
+    expr: (sum(rate(container_cpu_usage_seconds_total{name!=""}[3m])) BY (ip, name) * 100) > 80
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Container CPU usage (instance {{ $labels.instance }})"
+      description: "Container CPU usage is above 80%\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+- name: Container Memory
+  rules:
+  - alert: Memory_Alert
+    expr: rate(container_memory_usage_bytes{name!=""}[30s])  / container_memory_max_usage_bytes{name!=""}*100 > 80
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Container memory is under high load"
+      description: "{{ $labels.instance }} of job {{ $labels.job }} is under high load."
+- name: Node Memory 
+  rules:
+  - alert: Node_Memory_Alert
+    expr: (sum(node_memory_MemTotal_bytes) - sum(node_memory_MemFree_bytes + node_memory_Buffers_bytes + node_memory_Cached_bytes) ) / sum(node_memory_MemTotal_bytes) * 100 > 85
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Node memory is under high load"
+      description: "{{ $labels.instance }} of job {{ $labels.job }} is under high load."
+- name: Disk
+  rules:
+  - alert: Disk_Utilization_Alert
+    expr: predict_linear(node_filesystem_free_bytes{mountpoint="/"}[4h], 4 * 3600) < 0
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Disk utilization under high load"
+      description: "{{ $labels.instance }} of job {{ $labels.job }} is under high load."
+
+- name: Order Service is httpd Down
+  rules:
+  - alert: Order_Service_Http_Endpoint_Down
+    expr: probe_success{job="Check-Order-Http-Endpoint"}==0
+    #for: 20s
+    labels:
+      severity: critical
+    annotations:
+      summary: "Container is down :  (instance {{ $labels.instance }})"
+      description: "Order Service is down"
+- name: Instrument_TCP_Port_Is_Down
+  rules:
+  - alert: Instrument_TCP_Port_Down
+    expr: probe_success{job="TCP-blackbox"}==0
+    #for: 20s
+    labels:
+      severity: critical
+    annotations:
+      summary: "Container is down :  (instance {{ $labels.instance }})"
+      description: "A container has disappeared\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"	  
+
+- name: Result Service httpd is Down
+  rules:
+  - alert: Result_Service_Http_Endpoint_Down
+    expr: probe_success{job="Check-Result-Http-Endpoint"}==0
+    #for: 20s
+    labels:
+      severity: critical
+    annotations:
+      summary: "Result Service httpd is Down "
+      description: "Result Service httpd is Down"	  
+  
+- name: Container-IO
+  rules:
+  - alert: Container_IO
+    expr: (sum(container_fs_io_current {name!=""}) BY (ip, name) * 100) > 80
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Container Volume IO usage (instance {{ $labels.instance }})"
+      description: "Container Volume IO usage is above 80%\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+- name: Node_High_Cpu_Load
+  rules:
+  - alert: Node_High_Cpu_Load
+    expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High CPU load (instance {{ $labels.instance }})"
+      description: "CPU load is > 80%\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"	  
+
+- name: Unusual-Network-Throughput-In
+  rules:
+  - alert: Unusual_Network_Throughput_In
+    expr: sum by (instance) (irate(node_network_receive_bytes_total[2m])) / 1024 / 1024 > 100
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Unusual network throughput in (instance {{ $labels.instance }})"
+      description: "Host network interfaces are probably receiving too much data (> 100 MB/s)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+- name: Unusual-Network-Throughput-Out
+  rules:  
+  - alert: Unusual_Network_Throughput_Out
+    expr: sum by (instance) (irate(node_network_transmit_bytes_total[2m])) / 1024 / 1024 > 100
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Unusual network throughput out (instance {{ $labels.instance }})"
+      description: "Host network interfaces are probably sending too much data (> 100 MB/s)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+- name: Disk_Out_Of_Space
+  rules:
+  - alert: Disk_Out_Of_Space
+    expr: sum (container_fs_limit_bytes - container_fs_usage_bytes) / sum(container_fs_limit_bytes) > 90
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Out of disk space (instance {{ $labels.instance }})"
+      description: "Disk is almost full (< 10% left)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"

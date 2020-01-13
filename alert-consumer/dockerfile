@@ -1,0 +1,14 @@
+
+FROM openjdk:8-jre
+WORKDIR /
+#add required jars
+ADD alert-consumer/alertconsumer.jar alertconsumer.jar
+
+#JAVA_OPTS
+ENV JAVA_OPTS="-Xms1024m -Xmx2048m -XX:MetaspaceSize=512m -XX:MaxMetaspaceSize=1024m"
+
+#expose port
+EXPOSE 8082
+#cmd to execute
+
+ENTRYPOINT exec java $JAVA_OPTS -Dspring.profiles.active=dockernonssl -jar alertconsumer.jar
